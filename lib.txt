@@ -1,203 +1,150 @@
-local function newWindow(title)
-    local window = {}
-    window.tabs = {}
-    window.tabOrder = {}
-    local ui = Instance.new("ScreenGui")
-    ui.ResetOnSpawn = false
-    ui.Parent = game:GetService("CoreGui")
-    local frame = Instance.new("Frame", ui)
-    frame.Size = UDim2.new(0, 450, 0, 300)
-    frame.Position = UDim2.new(0.5, -225, 0.5, -150)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
-    frame.Active = true
-    frame.Draggable = true
+local library = {}
+local UserInputService = game:GetService("UserInputService")
 
-    local tabsFrame = Instance.new("Frame", frame)
-    tabsFrame.Size = UDim2.new(0, 120, 1, 0)
-    tabsFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+function library.new(title)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "iqsmLibraryGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = game.CoreGui
 
-    local contentFrame = Instance.new("Frame", frame)
-    contentFrame.Size = UDim2.new(1, -120, 1, 0)
-    contentFrame.Position = UDim2.new(0, 120, 0, 0)
-    contentFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 480, 0, 320)
+    mainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    mainFrame.Parent = screenGui
 
-    local tabButtons = {}
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = title
+    titleLabel.Size = UDim2.new(1, 0, 0, 50)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    titleLabel.TextSize = 26
+    titleLabel.Parent = mainFrame
 
-    local function switchTab(name)
-        for tName, tabFrame in pairs(window.tabs) do
-            tabFrame.Visible = (tName == name)
-            if tabButtons[tName] then
-                tabButtons[tName].BackgroundColor3 = (tName == name) and Color3.fromRGB(60, 60, 90) or Color3.fromRGB(40, 40, 70)
+    local tabsFrame = Instance.new("Frame")
+    tabsFrame.Size = UDim2.new(0, 120, 1, -50)
+    tabsFrame.Position = UDim2.new(0, 0, 0, 50)
+    tabsFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    tabsFrame.Parent = mainFrame
+
+    local buttonsFrame = Instance.new("Frame")
+    buttonsFrame.Size = UDim2.new(1, -120, 1, -50)
+    buttonsFrame.Position = UDim2.new(0, 120, 0, 50)
+    buttonsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    buttonsFrame.Parent = mainFrame
+
+    local tabs = {}
+    local buttons = {}
+    local currentTab = nil
+
+    local function showTab(tabName)
+        if currentTab == tabName then return end
+        currentTab = tabName
+        for bName, bList in pairs(buttons) do
+            for _, btn in ipairs(bList) do
+                btn.Visible = (bName == tabName)
             end
         end
     end
 
-    local function addTab(name)
+    function library:tab(name)
         if name == "iqsm." then return end
-        if window.tabs[name] then return end
-        local tabButton = Instance.new("TextButton", tabsFrame)
-        tabButton.Size = UDim2.new(1, 0, 0, 30)
-        tabButton.Position = UDim2.new(0, 0, 0, #window.tabOrder * 30)
-        tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
-        tabButton.TextColor3 = Color3.new(1,1,1)
-        tabButton.Text = name
-        tabButton.Font = Enum.Font.Gotham
-        tabButton.TextSize = 16
-        tabButton.AutoButtonColor = false
-        tabButton.MouseButton1Click:Connect(function()
-            switchTab(name)
-        end)
-        local tabContent = Instance.new("ScrollingFrame", contentFrame)
-        tabContent.Size = UDim2.new(1, 0, 1, 0)
-        tabContent.BackgroundTransparency = 1
-        tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-        tabContent.ScrollBarThickness = 6
-        tabContent.Visible = false
-        tabContent.LayoutOrder = #window.tabOrder + 1
+        if tabs[name] then return end
 
-        window.tabs[name] = tabContent
-        tabButtons[name] = tabButton
-        table.insert(window.tabOrder, name)
-        switchTab(name)
-        return tabContent
+        local tabButton = Instance.new("TextButton")
+        tabButton.Size = UDim2.new(1, 0, 0, 40)
+        tabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        tabButton.TextColor3 = Color3.fromRGB(180, 180, 220)
+        tabButton.Font = Enum.Font.Gotham
+        tabButton.TextSize = 20
+        tabButton.Text = name
+        tabButton.Parent = tabsFrame
+
+        table.insert(tabs, tabButton)
+        buttons[name] = {}
+
+        tabButton.MouseButton1Click:Connect(function()
+            showTab(name)
+        end)
+
+        if not currentTab then
+            showTab(name)
+        end
+
+        return name
     end
 
-    local creditsTab = Instance.new("ScrollingFrame", contentFrame)
-    creditsTab.Size = UDim2.new(1, 0, 1, 0)
-    creditsTab.BackgroundTransparency = 1
-    creditsTab.ScrollBarThickness = 6
-    creditsTab.Visible = false
-    window.tabs["iqsm."] = creditsTab
-    table.insert(window.tabOrder, "iqsm.")
-
-    local creditsButton = Instance.new("TextButton", tabsFrame)
-    creditsButton.Size = UDim2.new(1, 0, 0, 30)
-    creditsButton.Position = UDim2.new(0, 0, 0, (#window.tabOrder - 1) * 30)
-    creditsButton.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
-    creditsButton.TextColor3 = Color3.new(1,1,1)
-    creditsButton.Text = "iqsm."
-    creditsButton.Font = Enum.Font.Gotham
-    creditsButton.TextSize = 16
-    creditsButton.AutoButtonColor = false
-    creditsButton.MouseButton1Click:Connect(function()
-        switchTab("iqsm.")
-    end)
-    tabButtons["iqsm."] = creditsButton
-
-    local creditsLabel = Instance.new("TextLabel", creditsTab)
-    creditsLabel.Size = UDim2.new(1, -20, 0, 100)
-    creditsLabel.Position = UDim2.new(0, 10, 0, 10)
-    creditsLabel.BackgroundTransparency = 1
-    creditsLabel.TextColor3 = Color3.fromRGB(150, 150, 255)
-    creditsLabel.Font = Enum.Font.GothamBold
-    creditsLabel.TextSize = 24
-    creditsLabel.Text = "Made by iqsm."
-    creditsLabel.TextWrapped = true
-    creditsLabel.TextYAlignment = Enum.TextYAlignment.Top
-
-    local function addButton(text, callback, tabName)
+    function library:button(text, callback, tabName)
+        tabName = tabName or currentTab
         if tabName == "iqsm." then return end
-        tabName = tabName or window.tabOrder[1]
-        local tabContent = window.tabs[tabName]
-        if not tabContent then return end
-        local btn = Instance.new("TextButton", tabContent)
-        btn.Size = UDim2.new(1, -20, 0, 30)
-        btn.Position = UDim2.new(0, 10, 0, #tabContent:GetChildren() * 35)
-        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 110)
-        btn.TextColor3 = Color3.new(1,1,1)
-        btn.Font = Enum.Font.Gotham
+        if not buttons[tabName] then return end
+
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -20, 0, 35)
+        btn.Position = UDim2.new(0, 10, 0, (#buttons[tabName] * 40) + 5)
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+        btn.TextColor3 = Color3.fromRGB(220, 220, 255)
+        btn.Font = Enum.Font.GothamSemibold
         btn.TextSize = 18
         btn.Text = text
+        btn.Parent = buttonsFrame
+
         btn.MouseButton1Click:Connect(callback)
-        tabContent.CanvasSize = UDim2.new(0, 0, 0, btn.Position.Y.Offset + 40)
+
+        table.insert(buttons[tabName], btn)
         return btn
     end
 
-    local function addSlider(label, min, max, callback, tabName)
-        if tabName == "iqsm." then return end
-        tabName = tabName or window.tabOrder[1]
-        local tabContent = window.tabs[tabName]
-        if not tabContent then return end
-        local sliderFrame = Instance.new("Frame", tabContent)
-        sliderFrame.Size = UDim2.new(1, -20, 0, 50)
-        sliderFrame.Position = UDim2.new(0, 10, 0, #tabContent:GetChildren() * 55)
-        sliderFrame.BackgroundTransparency = 1
-        local labelText = Instance.new("TextLabel", sliderFrame)
-        labelText.Size = UDim2.new(0.4, 0, 1, 0)
-        labelText.BackgroundTransparency = 1
-        labelText.Text = label
-        labelText.TextColor3 = Color3.new(1,1,1)
-        labelText.Font = Enum.Font.Gotham
-        labelText.TextSize = 16
-        labelText.TextXAlignment = Enum.TextXAlignment.Left
+    function library:unload()
+        local confirm = Instance.new("TextButton")
+        confirm.Size = UDim2.new(0, 250, 0, 120)
+        confirm.Position = UDim2.new(0.5, -125, 0.5, -60)
+        confirm.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        confirm.TextColor3 = Color3.new(1, 1, 1)
+        confirm.Font = Enum.Font.GothamBold
+        confirm.TextSize = 24
+        confirm.Text = "Are you sure you want to unload?"
+        confirm.Parent = screenGui
 
-        local sliderBar = Instance.new("Frame", sliderFrame)
-        sliderBar.Size = UDim2.new(0.55, 0, 0.3, 0)
-        sliderBar.Position = UDim2.new(0.42, 0, 0.35, 0)
-        sliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
-        sliderBar.ClipsDescendants = true
+        local yesBtn = Instance.new("TextButton")
+        yesBtn.Size = UDim2.new(0, 110, 0, 40)
+        yesBtn.Position = UDim2.new(0.05, 0, 0.6, 0)
+        yesBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        yesBtn.TextColor3 = Color3.new(1, 1, 1)
+        yesBtn.Font = Enum.Font.GothamBold
+        yesBtn.TextSize = 20
+        yesBtn.Text = "Yes"
+        yesBtn.Parent = confirm
 
-        local sliderFill = Instance.new("Frame", sliderBar)
-        sliderFill.Size = UDim2.new(0, 0, 1, 0)
-        sliderFill.BackgroundColor3 = Color3.fromRGB(150, 150, 255)
+        local noBtn = Instance.new("TextButton")
+        noBtn.Size = UDim2.new(0, 110, 0, 40)
+        noBtn.Position = UDim2.new(0.55, 0, 0.6, 0)
+        noBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+        noBtn.TextColor3 = Color3.new(1, 1, 1)
+        noBtn.Font = Enum.Font.GothamBold
+        noBtn.TextSize = 20
+        noBtn.Text = "No"
+        noBtn.Parent = confirm
 
-        local valueLabel = Instance.new("TextLabel", sliderFrame)
-        valueLabel.Size = UDim2.new(0.1, 0, 1, 0)
-        valueLabel.Position = UDim2.new(0.98, -30, 0, 0)
-        valueLabel.BackgroundTransparency = 1
-        valueLabel.TextColor3 = Color3.new(1,1,1)
-        valueLabel.Font = Enum.Font.Gotham
-        valueLabel.TextSize = 16
-        valueLabel.Text = tostring(min)
-        valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-
-        local dragging = false
-        sliderBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-            end
+        yesBtn.MouseButton1Click:Connect(function()
+            screenGui:Destroy()
         end)
-        sliderBar.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
+        noBtn.MouseButton1Click:Connect(function()
+            confirm:Destroy()
         end)
-        sliderBar.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local relativePos = math.clamp(input.Position.X - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
-                local percent = relativePos / sliderBar.AbsoluteSize.X
-                local value = math.floor(min + (max - min) * percent + 0.5)
-                sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-                valueLabel.Text = tostring(value)
-                callback(value)
-            end
-        end)
-
-        tabContent.CanvasSize = UDim2.new(0, 0, 0, sliderFrame.Position.Y.Offset + 60)
-        return sliderFrame
     end
 
-    local function unload()
-        ui:Destroy()
-    end
+    local creditsTabBtn = Instance.new("TextLabel")
+    creditsTabBtn.Size = UDim2.new(1, 0, 0, 40)
+    creditsTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    creditsTabBtn.TextColor3 = Color3.fromRGB(150, 150, 200)
+    creditsTabBtn.Font = Enum.Font.GothamItalic
+    creditsTabBtn.TextSize = 18
+    creditsTabBtn.Text = "Made by iqsm."
+    creditsTabBtn.Parent = tabsFrame
 
-    local unloadBtn = Instance.new("TextButton", frame)
-    unloadBtn.Size = UDim2.new(0, 50, 0, 25)
-    unloadBtn.Position = UDim2.new(1, -55, 0, 5)
-    unloadBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-    unloadBtn.TextColor3 = Color3.new(1,1,1)
-    unloadBtn.Text = "X"
-    unloadBtn.Font = Enum.Font.GothamBold
-    unloadBtn.TextSize = 20
-    unloadBtn.AutoButtonColor = false
-    unloadBtn.MouseButton1Click:Connect(unload)
-
-    switchTab(window.tabOrder[1])
-    window.tab = addTab
-    window.button = addButton
-    window.slider = addSlider
-    window.unload = unload
-    return window
+    return library
 end
 
-return { new = newWindow }
+return library
