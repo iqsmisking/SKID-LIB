@@ -5,13 +5,41 @@ function library.new(title)
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "iqsmLibraryGui"
     screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
     screenGui.Parent = game.CoreGui
 
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, 480, 0, 320)
     mainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
     mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
+
+    local dragArea = Instance.new("TextLabel")
+    dragArea.Size = UDim2.new(1, 0, 0, 50)
+    dragArea.BackgroundTransparency = 1
+    dragArea.Text = ""
+    dragArea.Parent = mainFrame
+
+    local dragging, dragInput, dragStart, startPos = false
+    dragArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+        end
+    end)
+    dragArea.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Text = title
@@ -26,13 +54,21 @@ function library.new(title)
     tabsFrame.Size = UDim2.new(0, 120, 1, -50)
     tabsFrame.Position = UDim2.new(0, 0, 0, 50)
     tabsFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    tabsFrame.BorderSizePixel = 0
     tabsFrame.Parent = mainFrame
 
     local buttonsFrame = Instance.new("Frame")
     buttonsFrame.Size = UDim2.new(1, -120, 1, -50)
     buttonsFrame.Position = UDim2.new(0, 120, 0, 50)
     buttonsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    buttonsFrame.BorderSizePixel = 0
+    buttonsFrame.ClipsDescendants = true
     buttonsFrame.Parent = mainFrame
+
+    local buttonsLayout = Instance.new("UIListLayout")
+    buttonsLayout.Padding = UDim.new(0, 5)
+    buttonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    buttonsLayout.Parent = buttonsFrame
 
     local tabs = {}
     local buttons = {}
@@ -41,16 +77,15 @@ function library.new(title)
     local function showTab(tabName)
         if currentTab == tabName then return end
         currentTab = tabName
-        for bName, bList in pairs(buttons) do
+        for name, bList in pairs(buttons) do
             for _, btn in ipairs(bList) do
-                btn.Visible = (bName == tabName)
+                btn.Visible = (name == tabName)
             end
         end
     end
 
     function library:tab(name)
-        if name == "iqsm." then return end
-        if tabs[name] then return end
+        if name == "iqsm." or tabs[name] then return end
 
         local tabButton = Instance.new("TextButton")
         tabButton.Size = UDim2.new(1, 0, 0, 40)
@@ -59,6 +94,7 @@ function library.new(title)
         tabButton.Font = Enum.Font.Gotham
         tabButton.TextSize = 20
         tabButton.Text = name
+        tabButton.BorderSizePixel = 0
         tabButton.Parent = tabsFrame
 
         table.insert(tabs, tabButton)
@@ -77,18 +113,18 @@ function library.new(title)
 
     function library:button(text, callback, tabName)
         tabName = tabName or currentTab
-        if tabName == "iqsm." then return end
-        if not buttons[tabName] then return end
+        if tabName == "iqsm." or not buttons[tabName] then return end
 
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, -20, 0, 35)
-        btn.Position = UDim2.new(0, 10, 0, (#buttons[tabName] * 40) + 5)
         btn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
         btn.TextColor3 = Color3.fromRGB(220, 220, 255)
         btn.Font = Enum.Font.GothamSemibold
         btn.TextSize = 18
         btn.Text = text
+        btn.BorderSizePixel = 0
         btn.Parent = buttonsFrame
+        btn.Visible = (tabName == currentTab)
 
         btn.MouseButton1Click:Connect(callback)
 
@@ -135,14 +171,22 @@ function library.new(title)
         end)
     end
 
-    local creditsTabBtn = Instance.new("TextLabel")
-    creditsTabBtn.Size = UDim2.new(1, 0, 0, 40)
-    creditsTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    creditsTabBtn.TextColor3 = Color3.fromRGB(150, 150, 200)
-    creditsTabBtn.Font = Enum.Font.GothamItalic
-    creditsTabBtn.TextSize = 18
-    creditsTabBtn.Text = "Made by iqsm."
-    creditsTabBtn.Parent = tabsFrame
+    local credits = Instance.new("TextLabel")
+    credits.Size = UDim2.new(1, 0, 0, 40)
+    credits.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+    credits.TextColor3 = Color3.fromRGB(150, 150, 200)
+    credits.Font = Enum.Font.GothamItalic
+    credits.TextSize = 18
+    credits.Text = "Made by iqsm."
+    credits.BorderSizePixel = 0
+    credits.Parent = tabsFrame
+
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            screenGui.Enabled = not screenGui.Enabled
+        end
+    end)
 
     return library
 end
